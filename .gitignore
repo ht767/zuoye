@@ -28,3 +28,6 @@
 # OS files
 Thumbs.db
 .DS_Store
+report.docx
+report_images/
+report_text/
