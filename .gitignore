@@ -1,0 +1,30 @@
+# Binary executables and libraries
+*.exe
+*.dll
+*.so
+
+# OpenFAST output files
+*.out
+*.outb
+*.ech
+*.sum
+*.log
+*.csv
+*.yaml
+
+# ANSYS Workbench files
+*.wbpj
+*.mechdb
+*.scdoc
+*.agdb
+*.aqdb
+*.engd
+*.wbjn
+*.wbdp
+*.project_cache
+三脚架模型及瞬态结构_files/
+模型_files/
+
+# OS files
+Thumbs.db
+.DS_Store
