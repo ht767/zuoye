@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>仿真报告：工况三 - 风荷载+JONSWAP不规则波全耦合</title>
+<style>
+body { font-family: SimHei, Microsoft YaHei, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; line-height: 1.8; }
+h1 { color: #1a5276; border-bottom: 3px solid #1a5276; padding-bottom: 10px; }
+h2 { color: #2e86c1; border-bottom: 1px solid #2e86c1; padding-bottom: 5px; margin-top: 35px; }
+h3 { color: #2874a6; margin-top: 25px; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+th { background-color: #2e86c1; color: white; }
+tr:nth-child(even) { background-color: #f2f2f2; }
+img { max-width: 100%; height: auto; margin: 15px 0; border: 1px solid #ddd; border-radius: 5px; }
+.code { background: #f4f4f4; padding: 10px; border-radius: 5px; font-family: monospace; overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<h1>海上风电三脚架支撑结构全耦合动力响应分析报告</h1>
+
+<h2>一、概述</h2>
+<p>本报告基于 <b>NREL 5MW 海上风力发电机</b> 和 <b>OC3 Tripod 三脚架导管架基础</b>，使用 <b>OpenFAST v3.4.1</b> 进行全耦合仿真分析。</p>
+<p><b>工况三：风荷载 + JONSWAP 不规则波</b></p>
+<p>风荷载来自预计算时程文件 <code>MyWindLoads.txt</code>，通过 StC（Structural Control）模块施加到子结构上；波浪荷载由 HydroDyn 模块基于 JONSWAP 谱生成（Hs=8m, Tp=10s）。仿真时长 600 秒，监测三个关键结构结点的位移和加速度响应。</p>
+
+<h2>二、模型几何</h2>
+
+<h3>2.1 NREL 5MW 风机参数</h3>
+<table>
+<tr><th>参数</th><th>值</th></tr>
+<tr><td>额定功率</td><td>5 MW</td></tr>
+<tr><td>风轮直径</td><td>126 m（R=63 m）</td></tr>
+<tr><td>塔筒高度</td><td>87.6 m（自 MSL）</td></tr>
+<tr><td>塔筒底部高度</td><td>10 m（自 MSL）</td></tr>
+<tr><td>切入/额定/切出风速</td><td>3 / 11.4 / 25 m/s</td></tr>
+<tr><td>额定转速</td><td>12.1 rpm</td></tr>
+<tr><td>齿轮箱比</td><td>97:1</td></tr>
+</table>
+
+<h3>2.2 OC3 Tripod 导管架参数</h3>
+<table>
+<tr><th>参数</th><th>值</th></tr>
+<tr><td>总高度</td><td>55 m（泥面至过渡段顶）</td></tr>
+<tr><td>水深</td><td>45 m</td></tr>
+<tr><td>泥面深度</td><td>-45 m</td></tr>
+<tr><td>过渡段顶</td><td>+10 m</td></tr>
+<tr><td>导管架总重</td><td>约 1350 t</td></tr>
+<tr><td>材料</td><td>S355 钢（E=210 GPa, rho=7850 kg/m<sup>3</sup>）</td></tr>
+<tr><td>主腿直径</td><td>3.15 m</td></tr>
+<tr><td>主腿壁厚</td><td>0.035 m</td></tr>
+<tr><td>斜撑直径</td><td>1.875 m</td></tr>
+</table>
+
+<h3>2.3 结构坐标系</h3>
+<ul>
+<li><b>X 轴</b>：波浪传播方向（0&deg;），风机前后方向</li>
+<li><b>Y 轴</b>：侧向，风机左右方向</li>
+<li><b>Z 轴</b>：垂向，MSL（平均海平面）= 0m，向上为正</li>
+</ul>
+
+<h2>三、仿真配置</h2>
+
+<h3>3.1 OpenFAST 模块开关</h3>
+<table>
+<tr><th>模块</th><th>开关</th><th>说明</th></tr>
+<tr><td>ElastoDyn</td><td>CompElast=1</td><td>塔筒+叶片结构动力</td></tr>
+<tr><td>InflowWind</td><td>CompInflow=0</td><td>关闭（风荷载由 StC 提供）</td></tr>
+<tr><td>AeroDyn</td><td>CompAero=0</td><td>关闭（无气动计算）</td></tr>
+<tr><td>ServoDyn</td><td>CompServo=1</td><td>伺服控制 + StC</td></tr>
+<tr><td>HydroDyn</td><td>CompHydro=1</td><td>JONSWAP 不规则波</td></tr>
+<tr><td>SubDyn</td><td>CompSub=1</td><td>三脚架结构动力</td></tr>
+<tr><td>Mooring</td><td>CompMooring=0</td><td>固定式基础，无锚链</td></tr>
+</table>
+
+<h3>3.2 波浪参数</h3>
+<table>
+<tr><th>参数</th><th>值</th></tr>
+<tr><td>波浪模型</td><td>JONSWAP 谱（WaveMod=2）</td></tr>
+<tr><td>有效波高 WaveHs</td><td>8 m</td></tr>
+<tr><td>谱峰周期 WaveTp</td><td>10 s</td></tr>
+<tr><td>谱峰参数 WavePkShp</td><td>DEFAULT（gamma=3.3）</td></tr>
+<tr><td>传播方向 WaveDir</td><td>0&deg;（+X 方向）</td></tr>
+<tr><td>随机种子</td><td>123456789</td></tr>
+<tr><td>波浪分析时长</td><td>3630 s</td></tr>
+<tr><td>波浪计算步长</td><td>0.25 s</td></tr>
+</table>
+
+<h3>3.3 仿真控制参数</h3>
+<table>
+<tr><th>参数</th><th>值</th></tr>
+<tr><td>TMax</td><td>600 s</td></tr>
+<tr><td>DT</td><td>0.008 s</td></tr>
+<tr><td>DT_Out</td><td>0.04 s（输出步长）</td></tr>
+<tr><td>InterpOrder</td><td>2（二次插值）</td></tr>
+</table>
+
+<h2>四、三个监测结点</h2>
+
+<h3>4.1 结点位置</h3>
+<p>均在中心柱上（X=0, Y=0），仅 Z 坐标不同：</p>
+<table>
+<tr><th>结点</th><th>坐标 (X,Y,Z)</th><th>位置描述</th><th>SubDyn 映射</th></tr>
+<tr><td><b>上部顶端</b></td><td>(0, 0, 8m)</td><td>中心柱顶部法兰处</td><td>Member 57 Node 1 = Joint 51</td></tr>
+<tr><td><b>斜撑交汇</b></td><td>(0, 0, -10m)</td><td>中心柱中上部</td><td>Member 48 Node 1 = Joint 42</td></tr>
+<tr><td><b>下部腿柱</b></td><td>(0, 0, -34.71m)</td><td>中心柱底端</td><td>Member 46 Node 1 = Joint 25</td></tr>
+</table>
+
+<h2>五、结果</h2>
+
+<h3>5.1 三结点位移时程（600秒）</h3>
+<p><img src="工况三_结点位移对比.png" alt="三结点位移对比"></p>
+<p>红色：<b>上部顶端</b>（Z=8m）&mdash; 位移最大，峰峰值 1.4cm<br>
+绿色：<b>斜撑交汇</b>（Z=-10m）&mdash; 位移约 1.3cm<br>
+紫色：<b>下部腿柱</b>（Z=-34.71m）&mdash; 位移最小，仅 2.2mm</p>
+
+<h3>5.2 上部顶端</h3>
+<p><img src="工况三_上部顶端_位移加速度.png" alt="上部顶端"></p>
+<ul>
+<li>位移峰峰值：<b>0.0141 m</b>（14.1 mm）</li>
+<li>加速度最大值：<b>0.0129 m/s<sup>2</sup></b></li>
+</ul>
+
+<h3>5.3 斜撑交汇</h3>
+<p><img src="工况三_斜撑交汇_位移加速度.png" alt="斜撑交汇"></p>
+<ul>
+<li>位移峰峰值：<b>0.0129 m</b>（12.9 mm）</li>
+<li>加速度最大值：<b>0.0119 m/s<sup>2</sup></b></li>
+</ul>
+
+<h3>5.4 下部腿柱</h3>
+<p><img src="工况三_下部腿柱_位移加速度.png" alt="下部腿柱"></p>
+<ul>
+<li>位移峰峰值：<b>0.0022 m</b>（2.2 mm）</li>
+<li>加速度最大值：<b>0.0022 m/s<sup>2</sup></b></li>
+</ul>
+
+<h3>5.5 结果汇总</h3>
+<table>
+<tr><th>结点</th><th>坐标</th><th>位移峰峰值</th><th>位移标准差</th><th>加速度最大值</th></tr>
+<tr><td>上部顶端</td><td>Z=8m</td><td>0.0141 m</td><td>0.0020 m</td><td>0.0129 m/s<sup>2</sup></td></tr>
+<tr><td>斜撑交汇</td><td>Z=-10m</td><td>0.0129 m</td><td>0.0019 m</td><td>0.0119 m/s<sup>2</sup></td></tr>
+<tr><td>下部腿柱</td><td>Z=-34.71m</td><td>0.0022 m</td><td>0.0004 m</td><td>0.0022 m/s<sup>2</sup></td></tr>
+</table>
+
+<p>波浪参数验证：</p>
+<ul>
+<li>有效波高 Hs（4x标准差）：<b>6.88 m</b>（目标 8m，600s 样本统计偏差）</li>
+<li>波浪谱峰频率：<b>0.093 Hz</b>（T=10.7s），与目标 Tp=10s 吻合</li>
+</ul>
+
+<h2>六、结构动力特性分析</h2>
+
+<h3>6.1 位移沿高度的分布规律</h3>
+<p>三个结点位移从上到下依次递减：</p>
+<ul>
+<li>上部顶端（Z=8m）：0.0141 m</li>
+<li>斜撑交汇（Z=-10m）：0.0129 m（上部的 91%）</li>
+<li>下部腿柱（Z=-34.71m）：0.0022 m（上部的 16%）</li>
+</ul>
+<p>表明导管架结构刚度较大，变形主要集中在塔筒和上部结构。下部腿柱靠近固定端（泥面），位移趋近于零，符合固定边界条件。</p>
+
+<h3>6.2 波浪荷载传递路径</h3>
+<ol>
+<li>JONSWAP 不规则波作用于三根主腿和中心柱表面</li>
+<li>HydroDyn 计算动水压力（基于 Morison 公式）</li>
+<li>荷载通过 SubDyn 传递到整体结构</li>
+<li>结构通过 Craig-Bampton 模态降阶法计算动力响应</li>
+<li>三个监测结点的位移和加速度通过模态叠加法重构</li>
+</ol>
+
+<h2>七、运行方法</h2>
+<div class="code">
+# 运行仿真<br>
+cd d:/zuoyue<br>
+./openfast_x64.exe 5MW_OC3Trpd_DLL_WSt_WavesReg.fst
+</div>
+<br>
+<div class="code">
+# 生成结果图<br>
+python plot_results.py
+</div>
+
+<h2>八、软件环境</h2>
+<table>
+<tr><th>项目</th><th>版本</th></tr>
+<tr><td>OpenFAST</td><td>v3.4.1（Intel Fortran, 单精度）</td></tr>
+<tr><td>Python</td><td>3.12</td></tr>
+<tr><td>操作系统</td><td>Windows 11</td></tr>
+</table>
+</body></html>
