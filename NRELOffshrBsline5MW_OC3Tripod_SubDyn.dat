@@ -418,7 +418,7 @@ MemberID   NOutCnt    NodeCnt ![NOutCnt=how many nodes to get output for [< 10];
   (-)        (-)        (-)
   53          2          1 2    !M1  MSL tower (force + displacement)
   48          1          1      !M2  Upper brace Z=-10m (displacement) !joint 42
-  57          1          1      !M3  Top flange Z=8m    (displacement)  !joint 51
+  57          1          2      !M3  Top flange Z=10m   (displacement)  !joint 52
   46          1          1      !M4  Lower leg Z=-34.71m (displacement) !joint 25
   64          1          2      !M5  Upwind brace center (forces)
   72          1          2      !M6  SE brace center (forces)
@@ -429,7 +429,7 @@ MemberID   NOutCnt    NodeCnt ![NOutCnt=how many nodes to get output for [< 10];
 "M1N2FKxe , M1N2FKye , M1N2FKze , M1N2MKxe , M1N2MKye , M1N2MKze" - Tower loads         at  2m above MSL (member  53 at node 48)
 "M1N1FKxe , M1N1FKye , M1N1FKze , M1N1MKxe , M1N1MKye , M1N1MKze" - Tower loads         at           MSL (member  53 at node 47)
 "M2N1TDxss, M2N1TDyss"                                              - Displacement at upper brace Z=-10m (member 48 at joint 42)
-"M3N1TDxss, M3N1TDyss"                                              - Displacement at top flange Z=8m    (member 57 at joint 51)
+"M3N1TDxss, M3N1TDyss"                                              - Displacement at top flange Z=10m   (member 57 at joint 52)
 "M4N1TDxss, M4N1TDyss"                                              - Displacement at lower leg Z=-34.71m (member 46 at joint 25)
 "M5N1FKxe , M5N1FKye , M5N1FKze , M5N1MKxe , M5N1MKye , M5N1MKze" - Loads in center of      upwind brace (member  64 at node 16)
 "M6N1FKxe , M6N1FKye , M6N1FKze , M6N1MKxe , M6N1MKye , M6N1MKze" - Loads in center of SE downwind brace (member  72 at node 17)
