@@ -418,9 +418,9 @@ MemberID   NOutCnt    NodeCnt ![NOutCnt=how many nodes to get output for [< 10];
   (-)        (-)        (-)
   53          2          1 2    !M1  Tower at MSL (displacement + forces)
   48          1          1      !M2  Central column at Z=-10m (forces)
-  57          1          1      !M3  Top flange at Z=10m (displacement)  !Joint 52
-  46          1          1      !M4  Upper brace intersect, Z=-32.19m (displacement) !Joint 41
-  58          1          1      !M5  Lower leg transition, Z=-34.07m (displacement) !Joint 22
+  57          1          1      !M3  上部顶端 Z=8m    (displacement)  !joint 51
+  46          1          1      !M4  斜撑交汇 Z=-34.71m (displacement) !joint 25
+  58          1          1      !M5  下部腿柱 Z=-36.69m (displacement) !joint 53
   64          1          2      !M6  Upwind brace center (forces)
   72          1          2      !M7  SE brace center (forces)
   80          1          2      !M8  SW brace center (forces)
@@ -430,9 +430,9 @@ MemberID   NOutCnt    NodeCnt ![NOutCnt=how many nodes to get output for [< 10];
 "M1N2FKxe , M1N2FKye , M1N2FKze , M1N2MKxe , M1N2MKye , M1N2MKze" - Tower loads         at  2m above MSL (member  53 at node 48)
 "M1N1FKxe , M1N1FKye , M1N1FKze , M1N1MKxe , M1N1MKye , M1N1MKze" - Tower loads         at           MSL (member  53 at node 47)
 "M2N1FKxe , M2N1FKye , M2N1FKze , M2N1MKxe , M2N1MKye , M2N1MKze" - Tower loads         at 10m below MSL (member  48 at node 42)
-"M3N1TDxss, M3N1TDyss"                                              - Displacement at  top flange     Z=10m  (member  57 at node 52)
-"M4N1TDxss, M4N1TDyss"                                              - Displacement at  upper brace  Z=-32.19m (member  46 at node 41)
-"M5N1TDxss, M5N1TDyss"                                              - Displacement at  lower leg  Z=-34.07m (member  58 at node 22)
+"M3N1TDxss, M3N1TDyss"                                              - Displacement at 上部顶端 Z=8m    (member  57 at joint 51)
+"M4N1TDxss, M4N1TDyss"                                              - Displacement at 斜撑交汇 Z=-34.71m (member  46 at joint 25)
+"M5N1TDxss, M5N1TDyss"                                              - Displacement at 下部腿柱 Z=-36.69m (member  58 at joint 53)
 "M6N1FKxe , M6N1FKye , M6N1FKze , M6N1MKxe , M6N1MKye , M6N1MKze" - Loads in center of      upwind brace (member  64 at node 16)
 "M7N1FKxe , M7N1FKye , M7N1FKze , M7N1MKxe , M7N1MKye , M7N1MKze" - Loads in center of SE downwind brace (member  72 at node 17)
 "M8N1FKxe , M8N1FKye , M8N1FKze , M8N1MKxe , M8N1MKye , M8N1MKze" - Loads in center of SW downwind brace (member  80 at node 18)   !JASON: "M10N1FKxe, M10N1FKye, M10N1FKze, M10N1MKxe, M10N1MKye, M10N1MKze"    - Loads in downwind pile at sea-bed SE (member   2 at node  2)
