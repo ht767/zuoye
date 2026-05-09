@@ -67,8 +67,11 @@ OpenFAST 仿真中包含了完整的风机和塔筒，总质量约 <strong>640 �
 <tr><td><code>ansys_force_nodeCase3_001.txt</code> ~ <code>_152.txt</code></td><td>工况三（不规则波）每个结点的力</td></tr>
 <tr><td><code>ansys_force_nodeCase2_001.txt</code> ~ <code>_152.txt</code></td><td>工况二（规则波）每个结点的力</td></tr>
 <tr><td><code>submerged_nodes.txt</code></td><td>所有浸没结点的坐标和直径</td></tr>
-<tr><td><code>MyWindLoads.txt</code></td><td>风荷载数据（OpenFAST格式）</td></tr>
-<tr><td><code>MyWindLoads_ANSYS.txt</code></td><td>风荷载数据（ANSYS可导入格式）✅</td></tr>
+<tr><td><code>MyWindLoads.txt</code></td><td>风荷载原始数据（OpenFAST格式，科学计数法）</td></tr>
+<tr><td><code>WindLoad_Fx_ANSYS.csv</code></td><td>✅ <strong>风荷载（推荐用这个）</strong> — MATLAB生成，0.04s步长，Fx单位N</td></tr>
+<tr><td><code>WindLoad_Fx_ANSYS.txt</code></td><td>空格分隔版（远程力用）</td></tr>
+<tr><td><code>WindLoad_Fx_ANSYS_tab.txt</code></td><td>Tab分隔版（可复制粘贴）</td></tr>
+<tr><td><code>ANSYS_ExportWindFx.m</code></td><td>MATLAB生成脚本（可自行修改运行）</td></tr>
 </table>
 
 <h3>2.2 建议优先加载的波浪力结点</h3>
@@ -201,30 +204,35 @@ OpenFAST 仿真中包含了完整的风机和塔筒，总质量约 <strong>640 �
 
 <h3>▎第 11 步：加风荷载（作用在顶部）</h3>
 
-<div class="warn">
-<strong>⚠ 注意：</strong>原始 MyWindLoads.txt 是科学计数法 7 列格式，ANSYS 读不了。
-已经帮你转换好了备用文件：<code>D:\zuoyue\MyWindLoads_ANSYS.txt</code>（只有时间和 Fx 两列）。
+<div class="danger">
+<strong>⚠ 关键：不要用 MyWindLoads.txt</strong><br>
+原始文件是科学计数法，且单位是 kN（千牛），ANSYS 读不了。<br>
+已用 MATLAB 生成 ANSYS 专用文件 <code>WindLoad_Fx_ANSYS.csv</code>（0.04s步长，单位已换算为 N）：
 </div>
+
+<h4>✅ 推荐方法：使用「力」荷载（最简单）</h4>
 <ol>
-  <li>右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">远程力</span></li>
+  <li>右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">力</span>（不是远程力）</li>
   <li>下面详细信息：</li>
-  <li><span class="ui-path">范围方法</span> → <strong>几何选择</strong></li>
-  <li><span class="ui-path">几何结构</span> → 选顶部圆面 → 点 <span class="btn">应用</span></li>
-  <li><span class="ui-path">X 分量</span> → 下拉选 <strong>表格 (导入)</strong></li>
-  <li>弹出表格后 → 右键点击第1行序号 → <strong>导入</strong></li>
-  <li>选 <code>D:\zuoyue\MyWindLoads_ANSYS.txt</code> → 点 <span class="btn">打开</span></li>
-  <li>表格自动填满时间和数值 → 点 <span class="btn">确定</span></li>
-  <li><span class="ui-path">Y 分量</span> 填 <strong>0</strong></li>
-  <li><span class="ui-path">Z 分量</span> 填 <strong>0</strong></li>
+  <li><span class="ui-path">几何结构</span> → 在图形区选中过渡段顶部圆面 → 点 <span class="btn">应用</span></li>
+  <li><span class="ui-path">大小</span> → 下拉选 <strong>表格 (导入)</strong></li>
+  <li>弹出表格后 → 右键第1行序号 → <strong>导入</strong></li>
+  <li>选 <code>D:\zuoyue\WindLoad_Fx_ANSYS.csv</code> → 点 <span class="btn">打开</span></li>
+  <li>表格自动填满 → 点 <span class="btn">确定</span></li>
+  <li><span class="ui-path">方向</span> → 点一下 → 再在图形区点一下 X 轴方向（或选"分量"然后 X=1, Y=0, Z=0）</li>
 </ol>
 
-<div class="note">
-<strong>导入失败怎么办？</strong><br>
-如果 ANSYS 表格导入还是不行，改用下面更简单的方法：<br>
-右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">力</span>（不是远程力）<br>
-→ 选中顶部圆面 → 点 <span class="btn">应用</span><br>
-→ <span class="ui-path">大小</span> → <strong>表格 (导入)</strong> → 导入 <code>MyWindLoads_ANSYS.txt</code><br>
-→ <span class="ui-path">方向</span> → 选 <strong>X 轴</strong>
+<h4>备用方法：使用「远程力」</h4>
+<ol>
+  <li>右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">远程力</span></li>
+  <li><span class="ui-path">几何结构</span> → 选顶部圆面 → 点 <span class="btn">应用</span></li>
+  <li><span class="ui-path">X 分量</span> → 表格导入 → 选 <code>WindLoad_Fx_ANSYS.txt</code></li>
+  <li><span class="ui-path">Y 分量</span> 填 <strong>0</strong>，<span class="ui-path">Z 分量</span> 填 <strong>0</strong></li>
+</ol>
+
+<div class="warn">
+如果表格导入还是不行：<br>
+用记事本打开 <code>WindLoad_Fx_ANSYS_tab.txt</code>，全选复制，在 ANSYS 表格中右键 → <strong>粘贴</strong>。
 </div>
 
 <h3>▎第 12 步：加波浪力（以工况三为例）</h3>
