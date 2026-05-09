@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>ANSYS 与 OpenFAST 对比分析操作指南（中文版）</title>
+<style>
+body { font-family: "Microsoft YaHei", SimHei, sans-serif; max-width: 920px; margin: 0 auto; padding: 40px 20px; background: #fff; color: #333; line-height: 1.9; font-size: 14px; }
+h1 { color: #1a5276; border-bottom: 3px solid #2980b9; padding-bottom: 10px; text-align: center; }
+h2 { color: #1a5276; border-bottom: 2px solid #85c1e9; padding-bottom: 6px; margin-top: 40px; }
+h3 { color: #2c3e50; margin-top: 28px; padding-left: 8px; border-left: 3px solid #2980b9; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; font-size: 13px; }
+th, td { border: 1px solid #bbb; padding: 8px 12px; text-align: left; }
+th { background: #2980b9; color: white; font-weight: bold; }
+tr:nth-child(even) { background: #f8f9fa; }
+.note { background: #eaf2f8; padding: 15px 20px; border-left: 5px solid #2980b9; margin: 18px 0; border-radius: 4px; }
+.warn { background: #fef9e7; padding: 15px 20px; border-left: 5px solid #f39c12; margin: 18px 0; border-radius: 4px; }
+.danger { background: #fdedec; padding: 15px 20px; border-left: 5px solid #e74c3c; margin: 18px 0; border-radius: 4px; }
+.step-box { background: #eafaf1; padding: 15px 20px; border-left: 5px solid #27ae60; margin: 18px 0; border-radius: 4px; }
+.code-bg { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; border: 1px solid #ddd; font-size: 12px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-family: Consolas, monospace; font-size: 13px; }
+ol li, ul li { margin: 6px 0; }
+.ui-path { background: #e8f0fe; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: #1a5276; }
+.btn { background: #2980b9; color: white; padding: 1px 8px; border-radius: 3px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>ANSYS Workbench 2024R2 瞬态分析操作指南</h1>
+<p style="text-align:center;color:#666;font-size:16px;">三脚架导管架 — 和 OpenFAST 结果对比</p>
+
+<!-- ============================================================ -->
+<!-- 重要说明 -->
+<!-- ============================================================ -->
+<div class="danger">
+<strong>⚠ 重要提醒：你的模型只有三脚架，缺少风机和塔筒</strong><br><br>
+OpenFAST 仿真中包含了完整的风机和塔筒，总质量约 <strong>640 吨</strong>（塔筒 347t + 机舱轮毂 240t + 叶片 53t），全部压在过渡段顶部。<br>
+你的模型没有这部分质量，ANSYS 算出来的位移会偏小很多。<br><br>
+解决办法见下方的 <strong>第 10 步：添加质点（模拟风机+塔筒质量）</strong>。
+</div>
+
+<!-- ============================================================ -->
+<!-- 一、加载多少结点 -->
+<!-- ============================================================ -->
+<h2>一、波浪力要加在多少个点上？</h2>
+
+<p><strong>不需要全部152个点，建议只加在下面这些关键位置：</strong></p>
+
+<table>
+<tr><th>位置</th><th>数量</th><th>说明</th></tr>
+<tr><td>三根主腿（从泥面到水面）</td><td>约 12 个</td><td>每条腿选 4 个点</td></tr>
+<tr><td>斜撑交点</td><td>约 4 个</td><td>波浪力传递路径</td></tr>
+<tr><td>中心柱浸没段</td><td>约 3 个</td><td>三个监测点附近</td></tr>
+<tr><td><strong>合计</strong></td><td><strong>约 20 个</strong></td><td>够了</td></tr>
+</table>
+
+<p style="color:green;"><strong>✅ 记住：你只需要对比三个监测点的结果（Z=10m, Z=-10m, Z=-34.71m），不需要在模型所有节点上加力。</strong></p>
+
+
+<!-- ============================================================ -->
+<!-- 二、准备工作 -->
+<!-- ============================================================ -->
+<h2>二、准备工作</h2>
+
+<h3>2.1 已经生成好的数据文件（在 D:\zuoyue\ 文件夹里）</h3>
+<table>
+<tr><th>文件</th><th>说明</th></tr>
+<tr><td><code>ansys_force_nodeCase3_001.txt</code> ~ <code>_152.txt</code></td><td>工况三（不规则波）每个结点的力</td></tr>
+<tr><td><code>ansys_force_nodeCase2_001.txt</code> ~ <code>_152.txt</code></td><td>工况二（规则波）每个结点的力</td></tr>
+<tr><td><code>submerged_nodes.txt</code></td><td>所有浸没结点的坐标和直径</td></tr>
+<tr><td><code>MyWindLoads.txt</code></td><td>风荷载数据</td></tr>
+</table>
+
+<h3>2.2 建议优先加载的波浪力结点</h3>
+<table>
+<tr><th>结点编号</th><th>X (m)</th><th>Y (m)</th><th>Z (m)</th><th>位置</th></tr>
+<tr><td>1</td><td>-24.80</td><td>0.00</td><td>-45.00</td><td>上风腿底部（泥面）</td></tr>
+<tr><td>2</td><td>12.40</td><td>21.48</td><td>-45.00</td><td>右下腿底部（泥面）</td></tr>
+<tr><td>3</td><td>12.40</td><td>-21.48</td><td>-45.00</td><td>左下腿底部（泥面）</td></tr>
+<tr><td>10</td><td>-24.80</td><td>0.00</td><td>-39.31</td><td>上风腿中部</td></tr>
+<tr><td>22</td><td>-24.80</td><td>0.00</td><td>-34.07</td><td>上风腿-斜撑交点</td></tr>
+<tr><td>25</td><td>0.00</td><td>0.00</td><td>-34.71</td><td>中心柱底部</td></tr>
+<tr><td>26</td><td>-6.31</td><td>0.00</td><td>-10.00</td><td>上风腿顶部</td></tr>
+<tr><td>42</td><td>0.00</td><td>0.00</td><td>-10.00</td><td>中心柱斜撑交汇</td></tr>
+</table>
+
+
+<!-- ============================================================ -->
+<!-- 三、操作步骤 -->
+<!-- ============================================================ -->
+<h2>三、详细操作步骤（中文版 ANSYS）</h2>
+
+<h3>▎第 1 步：启动 Workbench</h3>
+<ol>
+  <li>点 Windows 开始菜单 → <strong>ANSYS 2024R2</strong> → <strong>Workbench 2024R2</strong></li>
+  <li>打开后，左侧找到 <strong>组件系统</strong> → 找到 <strong>瞬态结构</strong></li>
+  <li>按住鼠标左键，把 <strong>瞬态结构</strong> 拖到右边空白区域</li>
+  <li>松开后会出现一个分析流程框（有6行）</li>
+</ol>
+
+<h3>▎第 2 步：导入三脚架模型</h3>
+<ol>
+  <li>右键第 2 行 <span class="ui-path">几何结构</span> → <span class="ui-path">导入几何模型</span> → <span class="ui-path">浏览</span></li>
+  <li>找到 <code>C:\Users\YWX\Desktop\三脚架.scdoc</code> → 点 <span class="btn">打开</span></li>
+  <li>双击第 2 行 <span class="ui-path">几何结构</span> → 自动打开 SpaceClaim</li>
+  <li>看到三脚架模型后，关闭 SpaceClaim 窗口</li>
+  <li>回到 Workbench，第 2 行出现绿色 <strong>✅</strong></li>
+</ol>
+
+<h3>▎第 3 步：设置材料</h3>
+<ol>
+  <li>双击第 1 行 <span class="ui-path">工程数据</span></li>
+  <li>左边默认已经有 <strong>结构钢</strong>（就是 S355 钢，不用改）</li>
+  <li>点左上角 <span class="ui-path">返回到项目</span>（← 箭头）</li>
+</ol>
+
+<h3>▎第 4 步：进入 Mechanical 设置界面</h3>
+<ol>
+  <li>双击第 3 行 <span class="ui-path">模型</span></li>
+  <li>等几秒到几十秒，打开 Mechanical 界面</li>
+</ol>
+
+<h3>▎第 5 步：指定材料给所有零件</h3>
+<ol>
+  <li>左边大纲树 → 点开 <span class="ui-path">几何结构</span></li>
+  <li>按 <strong>Ctrl+A</strong> 全选所有零件</li>
+  <li>下面 <span class="ui-path">详细信息</span> 面板 → <span class="ui-path">材料</span> → <span class="ui-path">分配</span></li>
+  <li>选 <strong>结构钢</strong>（如果默认不是的话）</li>
+</ol>
+
+<h3>▎第 6 步：生成网格</h3>
+<ol>
+  <li>左边大纲树 → 右键 <span class="ui-path">网格</span> → <span class="ui-path">生成网格</span></li>
+  <li>等几分钟，网格生成完毕</li>
+</ol>
+
+<h3>▎第 7 步：设置分析参数</h3>
+<ol>
+  <li>左边大纲树 → 选中 <span class="ui-path">瞬态 (A5)</span></li>
+  <li>下面详细信息面板 → 点 <span class="ui-path">分析设置</span></li>
+  <li>按以下表格设置：</li>
+</ol>
+<table>
+<tr><th>参数名</th><th>填什么</th><th>说明</th></tr>
+<tr><td>步长结束时间</td><td><strong>600</strong></td><td>仿真 600 秒</td></tr>
+<tr><td>自动时间步长</td><td><strong>开启</strong></td><td>下拉选"开启"</td></tr>
+<tr><td>定义方式</td><td><strong>子步</strong></td><td>下拉选"子步"</td></tr>
+<tr><td>初始子步</td><td><strong>10</strong></td><td>初始步长 ≈ 60s</td></tr>
+<tr><td>最小子步</td><td><strong>5</strong></td><td>最大步长 ≈ 120s</td></tr>
+<tr><td>最大子步</td><td><strong>200</strong></td><td>最小时同步 ≈ 3s</td></tr>
+<tr><td>大变形</td><td><strong>关闭</strong></td><td>在"求解器控制"里</td></tr>
+</table>
+
+<h3>▎第 8 步：加固定约束（腿底固定）</h3>
+<ol>
+  <li>右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">固定支撑</span></li>
+  <li>上面工具栏点<span class="btn">选择面</span>（鼠标图标旁），选<span class="btn">面</span>模式</li>
+  <li>在图形区选三根腿的底端面（按住 Ctrl 多选）</li>
+  <li>点下面 <span class="btn">应用</span></li>
+</ol>
+
+<h3>▎第 9 步：加重力</h3>
+<ol>
+  <li>右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">标准地球重力</span></li>
+  <li>下面详细信息 → <span class="ui-path">方向</span> → 选 <strong>-Z 方向</strong></li>
+  <li>检查图形区：箭头应该指向下（指向地面方向）</li>
+  <li>如果箭头朝上，就改成 <strong>Z 方向</strong></li>
+</ol>
+
+<div class="note">
+<strong>为什么选 -Z：</strong>你用的是 ANSYS 2024R2，默认 Z 轴朝上。重力方向指向下，所以是 -Z。
+<br>验证方法：加完重力后看图形区箭头，朝下就对了。
+</div>
+
+<!-- ============================================================ -->
+<!-- 第10步：Point Mass -->
+<!-- ============================================================ -->
+<h2>四、添加风机和塔筒的质量（第 10 步，很重要）</h2>
+
+<div class="danger">
+跳过这一步的话，三脚架顶部没有 640 吨的重量，结果会偏小很多，没法跟 OpenFAST 对比。
+</div>
+
+<h3>▎第 10 步：加质点（模拟风机+塔筒）</h3>
+<ol>
+  <li>右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">质点</span></li>
+  <li>下面详细信息面板：</li>
+  <li><span class="ui-path">范围方法</span> → 选 <strong>几何选择</strong></li>
+  <li><span class="ui-path">几何结构</span> → 在图形区点选过渡段顶部（最上面的那个圆面）→ 点 <span class="btn">应用</span></li>
+  <li><span class="ui-path">质量</span> → 输入 <strong>640000</strong>（单位是 kg）</li>
+  <li>展开 <span class="ui-path">惯性属性</span> → <span class="ui-path">定义方式</span> → 选 <strong>仅质量</strong></li>
+</ol>
+
+<p>这样就在三脚架顶部加了一个 640 吨的质点，模拟风机和塔筒压在上面的效果。</p>
+
+
+<!-- ============================================================ -->
+<!-- 加载荷载 -->
+<!-- ============================================================ -->
+<h2>五、施加载荷</h2>
+
+<h3>▎第 11 步：加风荷载（作用在顶部）</h3>
+<ol>
+  <li>右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">远程力</span></li>
+  <li>下面详细信息：</li>
+  <li><span class="ui-path">范围方法</span> → <strong>几何选择</strong></li>
+  <li><span class="ui-path">几何结构</span> → 选顶部圆面 → 点 <span class="btn">应用</span></li>
+  <li><span class="ui-path">X 分量</span> → 下拉选 <strong>表格 (导入)</strong></li>
+  <li>弹出表格 → 右键 → <strong>导入</strong> → 选 <code>D:\zuoyue\MyWindLoads.txt</code></li>
+  <li>只保留第1列（时间）和第2列（Fx），删掉其他列</li>
+  <li>点 <span class="btn">确定</span></li>
+  <li><span class="ui-path">Y 分量</span> 和 <span class="ui-path">Z 分量</span> 都填 <strong>0</strong></li>
+</ol>
+
+<h3>▎第 12 步：加波浪力（以工况三为例）</h3>
+
+<p>对下面每个关键位置，重复以下操作：</p>
+
+<div class="step-box">
+<strong>每个点的操作步骤：</strong><br>
+右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">远程力</span><br>
+→ <span class="ui-path">范围方法</span> → <strong>坐标系</strong><br>
+→ 输入坐标 X, Y, Z → 点 <span class="btn">应用</span><br>
+→ <span class="ui-path">X 分量</span> → 表格导入 → 选对应的力文件<br>
+→ <span class="ui-path">Y 分量</span> → 表格导入 → 选同一文件（Fy列）<br>
+→ <span class="ui-path">Z 分量</span> → 表格导入 → 选同一文件（Fz列）
+</div>
+
+<table>
+<tr><th>顺序</th><th>位置</th><th>坐标</th><th>导入哪个文件</th></tr>
+<tr><td>1</td><td>上风腿底部</td><td>(-24.80, 0, -45.00)</td><td><code>ansys_force_nodeCase3_001.txt</code></td></tr>
+<tr><td>2</td><td>右下腿底部</td><td>(12.40, 21.48, -45.00)</td><td><code>ansys_force_nodeCase3_002.txt</code></td></tr>
+<tr><td>3</td><td>左下腿底部</td><td>(12.40, -21.48, -45.00)</td><td><code>ansys_force_nodeCase3_003.txt</code></td></tr>
+<tr><td>4</td><td>上风腿中部</td><td>(-24.80, 0, -39.31)</td><td><code>ansys_force_nodeCase3_010.txt</code></td></tr>
+<tr><td>5</td><td>中心柱底部</td><td>(0, 0, -34.71)</td><td><code>ansys_force_nodeCase3_025.txt</code></td></tr>
+<tr><td>6</td><td>斜撑交汇点</td><td>(0, 0, -10.00)</td><td><code>ansys_force_nodeCase3_042.txt</code></td></tr>
+</table>
+
+<div class="note">
+<strong>提示：</strong>如果觉得一个个加太麻烦，可以用 APDL 命令一次性加载（见附录）。
+</div>
+
+
+<!-- ============================================================ -->
+<!-- 阻尼 -->
+<!-- ============================================================ -->
+<h2>六、设置阻尼</h2>
+
+<ol>
+  <li>选中 <span class="ui-path">瞬态 (A5)</span></li>
+  <li>下面详细信息 → <span class="ui-path">阻尼控制</span>：</li>
+</ol>
+<table>
+<tr><th>参数</th><th>填什么</th></tr>
+<tr><td>β 阻尼（刚度）</td><td><strong>0.001</strong></td></tr>
+<tr><td>质量阻尼</td><td><strong>0.1</strong></td></tr>
+</table>
+
+
+<!-- ============================================================ -->
+<!-- 设置监测点 -->
+<!-- ============================================================ -->
+<h2>七、设置三个监测点</h2>
+
+<h3>▎第 13a 步：添加上部顶端（Z=10m）的位移监测</h3>
+<ol>
+  <li>右键 <span class="ui-path">求解 (A6)</span> → <span class="ui-path">插入</span> → <span class="ui-path">探针</span> → <span class="ui-path">位移</span></li>
+  <li>下面详细信息：<span class="ui-path">范围方法</span> → <strong>坐标系</strong></li>
+  <li><span class="ui-path">位置</span> → 输入 X=0, Y=0, Z=10 → 点 <span class="btn">应用</span></li>
+  <li><span class="ui-path">结果选择</span> → 选 <strong>X 轴</strong>（只看 X 方向）</li>
+  <li>在大纲树里选中这个探针 → 按 F2 → 改名：<strong>上部顶端_位移</strong></li>
+</ol>
+
+<h3>▎第 13b 步：添加上部顶端的加速度监测</h3>
+<ol>
+  <li>右键 <span class="ui-path">求解 (A6)</span> → <span class="ui-path">插入</span> → <span class="ui-path">探针</span> → <span class="ui-path">加速度</span></li>
+  <li><span class="ui-path">位置</span> → 同样填 X=0, Y=0, Z=10 → 点 <span class="btn">应用</span></li>
+  <li><span class="ui-path">结果选择</span> → <strong>X 轴</strong></li>
+  <li>改名：<strong>上部顶端_加速度</strong></li>
+</ol>
+
+<h3>▎第 13c 步：添加斜撑交汇（Z=-10m）</h3>
+<p>重复上面步骤，位置改为 <strong>X=0, Y=0, Z=-10</strong>，改名：<strong>斜撑交汇_位移</strong> 和 <strong>斜撑交汇_加速度</strong></p>
+
+<h3>▎第 13d 步：添加下部腿柱（Z=-34.71m）</h3>
+<p>位置改为 <strong>X=0, Y=0, Z=-34.71</strong>，改名：<strong>下部腿柱_位移</strong> 和 <strong>下部腿柱_加速度</strong></p>
+
+<table>
+<tr><th>监测点</th><th>坐标</th><th>位移探针名称</th><th>加速度探针名称</th></tr>
+<tr><td>上部顶端</td><td>(0,0,10)</td><td>上部顶端_位移</td><td>上部顶端_加速度</td></tr>
+<tr><td>斜撑交汇</td><td>(0,0,-10)</td><td>斜撑交汇_位移</td><td>斜撑交汇_加速度</td></tr>
+<tr><td>下部腿柱</td><td>(0,0,-34.71)</td><td>下部腿柱_位移</td><td>下部腿柱_加速度</td></tr>
+</table>
+
+
+<!-- ============================================================ -->
+<!-- 求解 -->
+<!-- ============================================================ -->
+<h2>八、求解和看结果</h2>
+
+<h3>▎第 14 步：开始计算</h3>
+<ol>
+  <li>点上面工具栏的 <span class="btn">求解</span> 按钮（⚡ 图标）</li>
+  <li>或者按键盘 <strong>F5</strong></li>
+  <li>等……大概 30 分钟到 2 个小时</li>
+  <li>算完后所有探针旁边会出现绿色 ✅</li>
+</ol>
+
+<h3>▎第 15 步：查看结果</h3>
+<ol>
+  <li>左边大纲树 → 点 <strong>上部顶端_位移</strong></li>
+  <li>下面会自动画出位移-时间曲线</li>
+  <li>如果想导出数据：右键曲线 → <strong>导出</strong></li>
+</ol>
+
+<h3>▎第 16 步：跟 OpenFAST 的结果对比</h3>
+
+<p>把 ANSYS 算出来的结果填到下面的表里：</p>
+
+<h4>工况三（不规则波）对比</h4>
+<table>
+<tr><th>监测点</th><th>指标</th><th>OpenFAST</th><th>你的 ANSYS</th><th>差多少</th></tr>
+<tr><td rowspan="2">上部顶端</td><td>X位移峰峰值</td><td>0.0173 m</td><td style="background:#fff9c4">____ m</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td>X加速度最大值</td><td>0.915 m/s²</td><td style="background:#fff9c4">____ m/s²</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td rowspan="2">斜撑交汇</td><td>X位移峰峰值</td><td>0.0161 m</td><td style="background:#fff9c4">____ m</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td>X加速度最大值</td><td>0.647 m/s²</td><td style="background:#fff9c4">____ m/s²</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td rowspan="2">下部腿柱</td><td>X位移峰峰值</td><td>0.0027 m</td><td style="background:#fff9c4">____ m</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td>X加速度最大值</td><td>0.145 m/s²</td><td style="background:#fff9c4">____ m/s²</td><td style="background:#fff9c4">____%</td></tr>
+</table>
+
+<h4>工况二（规则波）对比</h4>
+<table>
+<tr><th>监测点</th><th>指标</th><th>OpenFAST</th><th>你的 ANSYS</th><th>差多少</th></tr>
+<tr><td rowspan="2">上部顶端</td><td>X位移峰峰值</td><td>0.0107 m</td><td style="background:#fff9c4">____ m</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td>X加速度最大值</td><td>0.736 m/s²</td><td style="background:#fff9c4">____ m/s²</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td rowspan="2">斜撑交汇</td><td>X位移峰峰值</td><td>0.0114 m</td><td style="background:#fff9c4">____ m</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td>X加速度最大值</td><td>0.566 m/s²</td><td style="background:#fff9c4">____ m/s²</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td rowspan="2">下部腿柱</td><td>X位移峰峰值</td><td>0.0022 m</td><td style="background:#fff9c4">____ m</td><td style="background:#fff9c4">____%</td></tr>
+<tr><td>X加速度最大值</td><td>0.118 m/s²</td><td style="background:#fff9c4">____ m/s²</td><td style="background:#fff9c4">____%</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- 附录 -->
+<!-- ============================================================ -->
+<h2>附录 A：APDL 命令 — 一次性加载所有波浪力</h2>
+
+<p>如果你觉得上面第12步一个个加太麻烦，可以改用代码一次搞定：</p>
+
+<ol>
+  <li>右键 <span class="ui-path">瞬态 (A5)</span> → <span class="ui-path">插入</span> → <span class="ui-path">命令</span></li>
+  <li>把下面的代码复制粘贴进去（注意改文件路径）：</li>
+</ol>
+
+<div class="code-bg">
+<pre>
+! ============================================
+! APDL: 一键加载 JONSWAP 波浪力（工况三）
+! ============================================
+
+! 1. 读入各个结点的波浪力数据
+*dim,f1,array,6001,4
+*vread,f1(1,1),D:\zuoyue\ansys_force_nodeCase3_001.txt,,,4,6001
+(4f12.2)
+
+*dim,f2,array,6001,4
+*vread,f2(1,1),D:\zuoyue\ansys_force_nodeCase3_002.txt,,,4,6001
+(4f12.2)
+
+*dim,f10,array,6001,4
+*vread,f10(1,1),D:\zuoyue\ansys_force_nodeCase3_010.txt,,,4,6001
+(4f12.2)
+
+*dim,f25,array,6001,4
+*vread,f25(1,1),D:\zuoyue\ansys_force_nodeCase3_025.txt,,,4,6001
+(4f12.2)
+
+*dim,f42,array,6001,4
+*vread,f42(1,1),D:\zuoyue\ansys_force_nodeCase3_042.txt,,,4,6001
+(4f12.2)
+
+! 2. 根据坐标自动找到网格上的结点编号
+! 上风腿底部 (-24.8, 0, -45)
+nsel,s,loc,x,-24.8
+nsel,r,loc,z,-45
+*get,n1,node,0,num,min
+
+! 右下腿底部 (12.4, 21.48, -45)
+nsel,s,loc,x,12.4
+nsel,r,loc,y,21.48
+nsel,r,loc,z,-45
+*get,n2,node,0,num,min
+
+! 上风腿中部 (-24.8, 0, -39.31)
+nsel,s,loc,x,-24.8
+nsel,r,loc,z,-39.31
+*get,n10,node,0,num,min
+
+! 中心柱底部 (0, 0, -34.71)
+nsel,s,loc,x,0
+nsel,r,loc,z,-34.71
+*get,n25,node,0,num,min
+
+! 斜撑交汇 (0, 0, -10)
+nsel,s,loc,x,0
+nsel,r,loc,z,-10
+*get,n42,node,0,num,min
+
+! 3. 在每个时间步施加力
+*do,i,1,6001
+  time = i * 0.1
+  f,n1,fx,f1(i,2)
+  f,n1,fy,f1(i,3)
+  f,n2,fx,f2(i,2)
+  f,n2,fy,f2(i,3)
+  f,n10,fx,f10(i,2)
+  f,n10,fy,f10(i,3)
+  f,n25,fx,f25(i,2)
+  f,n25,fy,f25(i,3)
+  f,n42,fx,f42(i,2)
+  f,n42,fy,f42(i,3)
+*enddo
+</pre>
+</div>
+
+<h2>附录 B：风机塔筒参数（如果你想建更精确的模型）</h2>
+<table>
+<tr><th>部件</th><th>参数</th><th>值</th></tr>
+<tr><td>塔筒</td><td>高度</td><td>77.6 m</td></tr>
+<tr><td>塔筒</td><td>底部外径</td><td>6.0 m</td></tr>
+<tr><td>塔筒</td><td>顶部外径</td><td>3.87 m</td></tr>
+<tr><td>塔筒</td><td>壁厚</td><td>0.019 ~ 0.027 m</td></tr>
+<tr><td>塔筒</td><td>质量</td><td>~347 吨</td></tr>
+<tr><td>机舱+轮毂</td><td>质量</td><td>~240 吨</td></tr>
+<tr><td>叶片（3支）</td><td>质量</td><td>~53 吨</td></tr>
+<tr><td><strong>合计</strong></td><td></td><td><strong>~640 吨</strong></td></tr>
+</table>
+
+<h2>附录 C：常见问题</h2>
+
+<h3>Q1: 为什么 ANSYS 和 OpenFAST 结果不一样？</h3>
+<p>可能的原因：</p>
+<ul>
+  <li><strong>没加质点</strong>（步骤 10）—— 少了 640 吨质量</li>
+  <li><strong>没设阻尼</strong>（步骤 阻尼）—— 结构会持续晃动</li>
+  <li><strong>波浪力加的点太少</strong>—— 建议至少加 10 个点</li>
+  <li><strong>网格太粗</strong>—— 可以在网格设置里把单元尺寸调小</li>
+</ul>
+
+<h3>Q2: 仿真要跑多久？</h3>
+<ul>
+  <li>网格粗 + 10个力点：约 30 分钟</li>
+  <li>网格细 + 20个力点：约 2 小时</li>
+</ul>
+
+<h3>Q3: 怎么换工况二（规则波）？</h3>
+<p>导入波浪力时选 <code>ansys_force_nodeCase2_XXX.txt</code> 开头文件就行。</p>
+
+</body>
+</html>

@@ -1,0 +1,70 @@
+! ANSYS APDL Commands - Import wave loads
+! Usage: /INPUT in ANSYS Mechanical APDL
+
+! =========================================
+! METHOD 1: Use individual node files
+! =========================================
+
+! Node 1 at (-24.80, 0.00, -45.00)
+*dim,fx_001,array,6001
+*dim,fy_001,array,6001
+*dim,fz_001,array,6001
+*vread,fx_001(1),ansys_force_nodeCase3_001.txt,,,1,6001,,,1
+(f12.2)
+*vread,fy_001(1),ansys_force_nodeCase3_001.txt,,,1,6001,,,2
+(f12.2)
+*vread,fz_001(1),ansys_force_nodeCase3_001.txt,,,1,6001,,,3
+(f12.2)
+
+! Node 2 at (12.40, 21.48, -45.00)
+*dim,fx_002,array,6001
+*dim,fy_002,array,6001
+*dim,fz_002,array,6001
+*vread,fx_002(1),ansys_force_nodeCase3_002.txt,,,1,6001,,,1
+(f12.2)
+*vread,fy_002(1),ansys_force_nodeCase3_002.txt,,,1,6001,,,2
+(f12.2)
+*vread,fz_002(1),ansys_force_nodeCase3_002.txt,,,1,6001,,,3
+(f12.2)
+
+! Node 3 at (12.40, -21.48, -45.00)
+*dim,fx_003,array,6001
+*dim,fy_003,array,6001
+*dim,fz_003,array,6001
+*vread,fx_003(1),ansys_force_nodeCase3_003.txt,,,1,6001,,,1
+(f12.2)
+*vread,fy_003(1),ansys_force_nodeCase3_003.txt,,,1,6001,,,2
+(f12.2)
+*vread,fz_003(1),ansys_force_nodeCase3_003.txt,,,1,6001,,,3
+(f12.2)
+
+! Node 4 at (-24.80, 0.00, -42.98)
+*dim,fx_004,array,6001
+*dim,fy_004,array,6001
+*dim,fz_004,array,6001
+*vread,fx_004(1),ansys_force_nodeCase3_004.txt,,,1,6001,,,1
+(f12.2)
+*vread,fy_004(1),ansys_force_nodeCase3_004.txt,,,1,6001,,,2
+(f12.2)
+*vread,fz_004(1),ansys_force_nodeCase3_004.txt,,,1,6001,,,3
+(f12.2)
+
+! Node 5 at (12.40, 21.48, -42.98)
+*dim,fx_005,array,6001
+*dim,fy_005,array,6001
+*dim,fz_005,array,6001
+*vread,fx_005(1),ansys_force_nodeCase3_005.txt,,,1,6001,,,1
+(f12.2)
+*vread,fy_005(1),ansys_force_nodeCase3_005.txt,,,1,6001,,,2
+(f12.2)
+*vread,fz_005(1),ansys_force_nodeCase3_005.txt,,,1,6001,,,3
+(f12.2)
+
+! =========================================
+! METHOD 2: For Workbench users (easier)
+! =========================================
+! 1. From submerged_nodes.txt, pick target coordinates
+! 2. In Workbench: create Remote Points matching coords
+! 3. Insert Force -> Tabular -> Import node force file
+! 4. Repeat for each submerged node
+! =========================================
