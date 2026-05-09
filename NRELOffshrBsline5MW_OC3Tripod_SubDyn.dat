@@ -413,28 +413,26 @@ True             TabDelim    - Generate a tab-delimited output in the <rootname>
 "ES11.4e2"       OutFmt      - Output format for numerical results in the <rootname>.SD.out file
 "A11"            OutSFmt     - Output format for header strings in the <rootname>.SD.out file
 ------------------------- MEMBER OUTPUT LIST ------------------------------------------
-             9   NMOutputs   - Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].
+             8   NMOutputs   - Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].
 MemberID   NOutCnt    NodeCnt ![NOutCnt=how many nodes to get output for [< 10]; NodeCnt are local ordinal numbers from the start of the member, and must be >=1 and <= NDiv+1] If NMOutputs=0 leave blank as well.
   (-)        (-)        (-)
-  53          2          1 2    !M1  Tower at MSL (displacement + forces)
-  48          1          1      !M2  Central column at Z=-10m (forces)
-  57          1          1      !M3  上部顶端 Z=8m    (displacement)  !joint 51
-  46          1          1      !M4  斜撑交汇 Z=-34.71m (displacement) !joint 25
-  58          1          1      !M5  下部腿柱 Z=-36.69m (displacement) !joint 53
-  64          1          2      !M6  Upwind brace center (forces)
-  72          1          2      !M7  SE brace center (forces)
-  80          1          2      !M8  SW brace center (forces)
-   1          1          1      !M9  Upwind pile at seabed (forces)
+  53          2          1 2    !M1  MSL tower (force + displacement)
+  48          1          1      !M2  Upper brace Z=-10m (displacement) !joint 42
+  57          1          1      !M3  Top flange Z=8m    (displacement)  !joint 51
+  46          1          1      !M4  Lower leg Z=-34.71m (displacement) !joint 25
+  64          1          2      !M5  Upwind brace center (forces)
+  72          1          2      !M6  SE brace center (forces)
+  80          1          2      !M7  SW brace center (forces)
+   1          1          1      !M8  Upwind pile at seabed (forces)
 ------------------------- SDOutList: The next line(s) contains a list of output parameters that will be output in <rootname>.SD.out or <rootname>.out. ------
 "M1N1TDxss, M1N1TDyss, M1N1RDxe , M1N1RDye"                       - Tower displacements at           MSL (member  53 at node 47)
 "M1N2FKxe , M1N2FKye , M1N2FKze , M1N2MKxe , M1N2MKye , M1N2MKze" - Tower loads         at  2m above MSL (member  53 at node 48)
 "M1N1FKxe , M1N1FKye , M1N1FKze , M1N1MKxe , M1N1MKye , M1N1MKze" - Tower loads         at           MSL (member  53 at node 47)
-"M2N1FKxe , M2N1FKye , M2N1FKze , M2N1MKxe , M2N1MKye , M2N1MKze" - Tower loads         at 10m below MSL (member  48 at node 42)
-"M3N1TDxss, M3N1TDyss"                                              - Displacement at 上部顶端 Z=8m    (member  57 at joint 51)
-"M4N1TDxss, M4N1TDyss"                                              - Displacement at 斜撑交汇 Z=-34.71m (member  46 at joint 25)
-"M5N1TDxss, M5N1TDyss"                                              - Displacement at 下部腿柱 Z=-36.69m (member  58 at joint 53)
-"M6N1FKxe , M6N1FKye , M6N1FKze , M6N1MKxe , M6N1MKye , M6N1MKze" - Loads in center of      upwind brace (member  64 at node 16)
-"M7N1FKxe , M7N1FKye , M7N1FKze , M7N1MKxe , M7N1MKye , M7N1MKze" - Loads in center of SE downwind brace (member  72 at node 17)
-"M8N1FKxe , M8N1FKye , M8N1FKze , M8N1MKxe , M8N1MKye , M8N1MKze" - Loads in center of SW downwind brace (member  80 at node 18)   !JASON: "M10N1FKxe, M10N1FKye, M10N1FKze, M10N1MKxe, M10N1MKye, M10N1MKze"    - Loads in downwind pile at sea-bed SE (member   2 at node  2)
-"M9N1FKxe , M9N1FKye , M9N1FKze , M9N1MKxe , M9N1MKye , M9N1MKze" - Loads in upwind   pile at sea-bed    (member   1 at node  1)   !JASON: "M11N1FKxe, M11N1FKye, M11N1FKze, M11N1MKxe, M11N1MKye, M11N1MKze"    - Loads in downwind pile at sea-bed SW (member   3 at node  3)
+"M2N1TDxss, M2N1TDyss"                                              - Displacement at upper brace Z=-10m (member 48 at joint 42)
+"M3N1TDxss, M3N1TDyss"                                              - Displacement at top flange Z=8m    (member 57 at joint 51)
+"M4N1TDxss, M4N1TDyss"                                              - Displacement at lower leg Z=-34.71m (member 46 at joint 25)
+"M5N1FKxe , M5N1FKye , M5N1FKze , M5N1MKxe , M5N1MKye , M5N1MKze" - Loads in center of      upwind brace (member  64 at node 16)
+"M6N1FKxe , M6N1FKye , M6N1FKze , M6N1MKxe , M6N1MKye , M6N1MKze" - Loads in center of SE downwind brace (member  72 at node 17)
+"M7N1FKxe , M7N1FKye , M7N1FKze , M7N1MKxe , M7N1MKye , M7N1MKze" - Loads in center of SW downwind brace (member  80 at node 18)
+"M8N1FKxe , M8N1FKye , M8N1FKze , M8N1MKxe , M8N1MKye , M8N1MKze" - Loads in upwind   pile at sea-bed    (member   1 at node  1)
 END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)
